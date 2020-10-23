@@ -22,6 +22,17 @@ namespace WNP78.Grenades
 
         Dictionary<Guid, XElement> definitions = new Dictionary<Guid, XElement>();
 
+        public static Vector3? ParseV3(string s)
+        {
+            if (s == null) { return null; }
+
+            var p = s.Split(',');
+            return new Vector3(
+                p.Length > 0 ? float.Parse(p[0]) : 0f,
+                p.Length > 1 ? float.Parse(p[1]) : 0f,
+                p.Length > 2 ? float.Parse(p[2]) : 0f);
+        }
+
         public XElement GetXMLForGrenade(Grenade g)
         {
             var nm = g.gameObject.name;
