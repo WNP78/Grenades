@@ -25,7 +25,7 @@
         public float threshold;
         public float rotateSpeed;
 
-        public bool Locked { get; set; } = true;
+        public bool Locked { [UnhollowerBaseLib.Attributes.HideFromIl2Cpp] get; [UnhollowerBaseLib.Attributes.HideFromIl2Cpp] set; } = true;
 
         private float handleState = 1f;
 
@@ -33,14 +33,16 @@
 
         private bool rotationComplete = false;
 
+        [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
         public void Init(XElement xml, Grenade grenade)
         {
             this.grenade = grenade;
             this.closed = this.transform.localRotation;
-            this.open = grenade.transform.Find((string)xml.Attribute("Open") ?? "HandleOpen").localRotation;
-            this.released = grenade.transform.Find((string)xml.Attribute("Released") ?? "HandleReleased").localRotation;
+            this.open = grenade.transform.Find((string)xml.Attribute("open") ?? "HandleOpen")?.localRotation ?? this.closed;
+            this.released = grenade.transform.Find((string)xml.Attribute("released") ?? "HandleReleased")?.localRotation ?? this.closed;
             this.threshold = (float?)xml.Attribute("threshold") ?? 0.1f;
             this.rotateSpeed = (float?)xml.Attribute("degreesPerSecond") ?? 100f;
+            this.grip = grenade.transform.Find((string)xml.Attribute("grip") ?? "HandleGrip")?.GetComponent<Grip>();
             var fingers = (string)xml.Attribute("fingers");
             if (fingers != null)
             {
@@ -62,13 +64,14 @@
             this.handleState = 1f;
             this.hasReleased = false;
             this.rotationComplete = false;
+            this.transform.localRotation = this.closed;
         }
 
         void Update()
         {
             if (!this.Locked)
             {
-                float heldState = 1f;
+                float heldState = 0f;
 
                 var hand = this.grip?.GetHand();
                 if (hand != null)
@@ -109,7 +112,7 @@
                         this.handleState = Mathf.MoveTowards(this.handleState, heldState, this.rotateSpeed / Quaternion.Angle(this.closed, this.open));
                     }
 
-                    this.transform.rotation = Quaternion.Lerp(this.open, this.closed, this.handleState);
+                    this.transform.localRotation = Quaternion.Lerp(this.open, this.closed, this.handleState);
                 }
             }
         }

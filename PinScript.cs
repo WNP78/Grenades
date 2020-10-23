@@ -18,9 +18,17 @@
 
         public List<Transform> transforms = new List<Transform>();
 
+        private Rigidbody rigidbody;
+        private Grip grip;
+
+        [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
         public void Init(XElement xml, Grenade grenade)
         {
+            MelonLoader.MelonLogger.Log($"Pin init, on {gameObject.name}");
+            this.grip = this.GetComponent<Grip>();
             this.grenade = grenade;
+            this.rigidbody = this.GetComponentInParent<Rigidbody>();
+            MelonLoader.MelonLogger.Log($"Rb = {this.rigidbody.gameObject.name}");
 
             this.pullForceSqr = (float?)xml.Attribute("pullForce") ?? 300f;
             this.pullForceSqr *= this.pullForceSqr;
@@ -28,10 +36,14 @@
             this.transforms.Clear();
             foreach (var el in xml.Elements("Transform"))
             {
-                var t = grenade.transform.Find((string)el.Attribute("path") ?? "PinTransformDefault");
-                if (t != null)
+                string path = (string)el.Attribute("path");
+                if (path != null)
                 {
-                    transforms.Add(t);
+                    var t = grenade.transform.Find(path);
+                    if (t != null)
+                    {
+                        transforms.Add(t);
+                    }
                 }
             }
         }
@@ -54,9 +66,28 @@
             this.grenade.OnPinPulled();
         }
 
-        private void OnHandAttachedUpdate(Hand hand)
+        private ConfigurableJoint joint;
+        
+        void Update()
         {
-            if (hand.joint.currentForce.sqrMagnitude > this.pullForceSqr)
+            var hand = this.grip.GetHand();
+            if (hand == null)
+            {
+                this.joint = null;
+            }
+            else
+            {
+                foreach (var j in hand.GetComponents<ConfigurableJoint>())
+                {
+                    if (j.connectedBody == this.rigidbody)
+                    {
+                        joint = j;
+                        break;
+                    }
+                }
+            }
+
+            if (joint != null && joint.currentForce.sqrMagnitude > this.pullForceSqr)
             {
                 hand.DetachJoint();
                 this.OnPulled();

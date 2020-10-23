@@ -24,6 +24,7 @@
 
         public AudioSource audio;
 
+        [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
         public void Init(XElement xml, Grenade parent)
         {
             this.grenade = parent;
@@ -94,7 +95,7 @@
             {
                 var source = grenade.transform.Find((string)el.Attribute("path") ?? "Audio");
                 this.audio = source?.GetComponent<AudioSource>();
-                this._audioParent = source.parent;
+                this._audioParent = source?.parent;
             }
         }
 

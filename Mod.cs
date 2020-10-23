@@ -16,13 +16,43 @@ namespace WNP78.Grenades
 {
     public class GrenadesMod : MelonMod
     {
+        const string guidPrefix = "GrenadeGuid_";
+
         public static GrenadesMod Instance { get; set; }
+
+        Dictionary<Guid, XElement> definitions = new Dictionary<Guid, XElement>();
+
+        public XElement GetXMLForGrenade(Grenade g)
+        {
+            var nm = g.gameObject.name;
+            if (nm.StartsWith(guidPrefix))
+            {
+                string s = nm.Substring(guidPrefix.Length);
+                int x;
+                if ((x = s.IndexOf(' ')) != -1)
+                {
+                    s = s.Substring(0, x);
+                }
+
+                if (Guid.TryParse(s, out Guid guid))
+                {
+                    if (definitions.ContainsKey(guid))
+                    {
+                        return definitions[guid];
+                    }
+                }
+            }
+
+            return null;
+        }
 
         public override void OnApplicationStart()
         {
             Instance = this;
             base.OnApplicationStart();
             ClassInjector.RegisterTypeInIl2Cpp<Grenade>();
+            ClassInjector.RegisterTypeInIl2Cpp<PinScript>();
+            ClassInjector.RegisterTypeInIl2Cpp<HandleScript>();
 
             var folder = new DirectoryInfo(Path.Combine(Path.GetDirectoryName(Application.dataPath), "UserData", "Grenades"));
 
@@ -46,7 +76,10 @@ namespace WNP78.Grenades
                             var prefab = bundle.LoadAsset<GameObject>((string)grenadeXml.Attribute("prefab"));
                             prefab.hideFlags = HideFlags.DontUnloadUnusedAsset;
                             Shaders.ReplaceDummyShaders(prefab);
-                            prefab.AddComponent<Grenade>().Init(grenadeXml);
+                            var guid = Guid.NewGuid();
+                            prefab.name = guidPrefix + guid.ToString();
+                            this.definitions[guid] = grenadeXml;
+                            var g = prefab.AddComponent<Grenade>();
                             SpawnMenu.AddItem(prefab,
                                 (string)grenadeXml.Attribute("name") ?? "[Grenade]",
                                 (int?)grenadeXml.Attribute("pool") ?? 4,
@@ -55,7 +88,7 @@ namespace WNP78.Grenades
                     }
                     catch (Exception e)
                     {
-                        Log.LogError($"Failed when loading grenade bundle: {file.Name}\n{e.Message}");
+                        Log.LogError($"Failed when loading grenade bundle: {file.Name}\n{e.Message}\n{e.StackTrace}");
                     }
                 }
             }

@@ -21,7 +21,26 @@
 
         private bool ticking = false;
 
-        public void Init(XElement xml)
+        private bool init = false;
+
+        private void Start()
+        {
+            MelonLoader.MelonLogger.Log($"Grenade start {this.gameObject.name}");
+            if (!init)
+            {
+                MelonLoader.MelonLogger.Log("Grenade init");
+                var xml = GrenadesMod.Instance.GetXMLForGrenade(this);
+                if (xml != null)
+                {
+                    this.Init(xml);
+                }
+
+                init = true;
+            }
+        }
+
+        [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
+        void Init(XElement xml)
         {
             fuseTime = (float?)xml.Attribute("fuse") ?? 5f;
 
