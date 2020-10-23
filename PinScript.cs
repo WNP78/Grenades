@@ -24,11 +24,9 @@
         [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
         public void Init(XElement xml, Grenade grenade)
         {
-            MelonLoader.MelonLogger.Log($"Pin init, on {gameObject.name}");
             this.grip = this.GetComponent<Grip>();
             this.grenade = grenade;
             this.rigidbody = this.GetComponentInParent<Rigidbody>();
-            MelonLoader.MelonLogger.Log($"Rb = {this.rigidbody.gameObject.name}");
 
             this.pullForceSqr = (float?)xml.Attribute("pullForce") ?? 300f;
             this.pullForceSqr *= this.pullForceSqr;
