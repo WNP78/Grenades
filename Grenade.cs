@@ -37,6 +37,8 @@
 
                 init = true;
             }
+
+            this.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Continuous;
         }
 
         [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
