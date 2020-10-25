@@ -1,5 +1,6 @@
 ﻿namespace WNP78.Grenades
 {
+    using StressLevelZero.Props.Weapons;
     using System;
     using System.Xml.Linq;
     using UnityEngine;
@@ -35,8 +36,6 @@
 
                 init = true;
             }
-
-            this.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Continuous;
         }
 
         [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
@@ -76,7 +75,15 @@
 
         public void OnPinPulled()
         {
-            this.handle.Locked = false;
+            if (this.handle != null)
+            {
+                this.handle.Locked = false;
+            }
+            else
+            {
+                this.timer = this.fuseTime;
+                this.ticking = true;
+            }
         }
 
         public void OnHandleReleased()
@@ -94,6 +101,7 @@
                 if (this.timer <= 0f)
                 {
                     this.Explode();
+                    this.ticking = false;
                 }
             }
         }
@@ -106,7 +114,6 @@
         void Explode()
         {
             this.explosion.Explode();
-            this.gameObject.SetActive(false);
         }
 
         void Reset()
@@ -121,6 +128,18 @@
                 this.handle.Reset();
                 this.handle.Locked = this.pin != null;
             }
+
+            var rb = this.GetComponentInParent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
+            var host = this.GetComponent<StressLevelZero.Interaction.InteractableHost>();
+            host?.EnableInteraction();
+            host?.EnableColliders();
+            host?.EnableFarHover();
         }
     }
 }

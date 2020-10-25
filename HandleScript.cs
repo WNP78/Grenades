@@ -81,7 +81,7 @@
                 {
                     if (this.angle < this.released)
                     {
-                        this.angle = Mathf.MoveTowards(this.angle, this.released, this.rotateSpeed);
+                        this.angle = Mathf.MoveTowards(this.angle, this.released, this.rotateSpeed * Time.deltaTime);
                         this.transform.localRotation = this.closed * Quaternion.AngleAxis(this.angle, this.axis);
                     }
                 }
@@ -108,7 +108,7 @@
                     }
                     else
                     {
-                        this.angle = Mathf.MoveTowards(this.angle, heldAngle, this.rotateSpeed);
+                        this.angle = Mathf.MoveTowards(this.angle, heldAngle, this.rotateSpeed * Time.deltaTime);
                     }
 
                     this.transform.localRotation = this.closed * Quaternion.AngleAxis(this.angle, this.axis);
