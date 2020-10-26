@@ -249,20 +249,28 @@
 
         public class Audio : ExplosionAction
         {
-            private AudioClip clip;
-            private float volume;
+            private AudioSource source;
+            private Transform original;
 
             public Audio(XElement xml, ExplosionModule module) : base(xml, module)
             {
-                var source = module.grenade.transform.Find((string)xml.Attribute("path") ?? "Audio")?.GetComponent<AudioSource>();
+                source = module.grenade.transform.Find((string)xml.Attribute("path") ?? "Audio")?.GetComponent<AudioSource>();
                 source.playOnAwake = false;
-                this.clip = source.clip;
-                this.volume = (float?)xml.Attribute("volume") ?? 1f;
+                original = source.transform.parent;
             }
 
             public override void Run(ExplosionModule module, Grenade grenade)
             {
-                AudioPlayer.PlayAtPoint(clip, grenade.transform.position, null, new Il2CppSystem.Nullable<float>(this.volume), new Il2CppSystem.Nullable<bool>(false), new Il2CppSystem.Nullable<float>(1f));
+                source.transform.parent = null;
+                source.transform.position = grenade.transform.position;
+                source.Play();
+            }
+
+            public override void Reset(ExplosionModule module, Grenade grenade)
+            {
+                source.transform.parent = original;
+                source.transform.localPosition = Vector3.zero;
+                source.Stop();
             }
         }
 

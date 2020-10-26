@@ -282,6 +282,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AudioPlayer.cs" />
     <Compile Include="ExplosionModule.cs" />
     <Compile Include="Grenade.cs" />
     <Compile Include="HandleScript.cs" />
