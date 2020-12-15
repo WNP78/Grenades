@@ -15,6 +15,7 @@
 
         public Grenade grenade;
         public float pullForceSqr;
+        public PinInteractionMode mode;
 
         public List<(Transform t, Quaternion normal, Quaternion held)> transforms = new List<(Transform, Quaternion, Quaternion)>();
 
@@ -26,8 +27,21 @@
             this.grip = this.GetComponent<Grip>();
             this.grenade = grenade;
 
-            this.pullForceSqr = (float?)xml.Attribute("pullForce") ?? 300f;
-            this.pullForceSqr *= this.pullForceSqr;
+            if (!Enum.TryParse((string)xml.Attribute("mode") ?? "ForceThreshold", out this.mode))
+            {
+                this.mode = PinInteractionMode.ForceThreshold;
+            }
+
+            if (this.mode == PinInteractionMode.PullDevice)
+            {
+                var pullDevice = this.GetComponentInParent<PullDevice>();
+                pullDevice.OnHandlePull.AddListener((Action)this.OnHandlePulled);
+            }
+            else if (this.mode == PinInteractionMode.ForceThreshold)
+            {
+                this.pullForceSqr = (float?)xml.Attribute("pullForce") ?? 300f;
+                this.pullForceSqr *= this.pullForceSqr;
+            }
 
             this.transforms.Clear();
             foreach (var el in xml.Elements("Transform"))
@@ -67,6 +81,31 @@
             this.gameObject.SetActive(false);
         }
 
+        private void OnGrabbed()
+        {
+            foreach (var t in this.transforms)
+            {
+                if (t.t != null)
+                {
+                    t.t.localRotation = t.held;
+                }
+            }
+        }
+
+        private void OnUngrabbed()
+        {
+            foreach (var t in this.transforms)
+            {
+                t.t.localRotation = t.normal;
+            }
+        }
+
+        private void OnHandlePulled()
+        {
+            this.grip.GetHand()?.DetachJoint();
+            this.OnPulled();
+        }
+
         private ConfigurableJoint joint;
         
         void Update()
@@ -77,34 +116,33 @@
                 if (this.joint is object)
                 {
                     this.joint = null;
-                    foreach (var t in this.transforms)
-                    {
-                        t.t.localRotation = t.normal;
-                    }
+                    this.OnUngrabbed();
                 }
             }
             else
             {
                 foreach (var j in hand.GetComponents<ConfigurableJoint>())
                 {
-                    if (j.connectedBody.transform.root == this.transform.root)
+                    if (j.connectedBody?.transform?.root == this.transform.root)
                     {
                         joint = j;
-                        foreach (var t in this.transforms)
-                        {
-                            t.t.localRotation = t.held;
-                        }
-
+                        this.OnGrabbed();
                         break;
                     }
                 }
             }
 
-            if (joint != null && joint.currentForce.sqrMagnitude > this.pullForceSqr)
+            if (mode == PinInteractionMode.ForceThreshold && joint != null && joint.currentForce.sqrMagnitude > this.pullForceSqr)
             {
-                hand.DetachJoint();
+                hand?.DetachJoint();
                 this.OnPulled();
             }
+        }
+
+        public enum PinInteractionMode
+        {
+            ForceThreshold,
+            PullDevice
         }
     }
 }
