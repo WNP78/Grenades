@@ -1,5 +1,6 @@
 ﻿namespace WNP78.Grenades
 {
+    using StressLevelZero.Interaction;
     using StressLevelZero.Props.Weapons;
     using System;
     using System.Xml.Linq;
@@ -24,6 +25,10 @@
 
         private bool init = false;
 
+        private WeaponSlot mySlot;
+
+        public HandWeaponSlotReciever CurrentSlot { get; set; }
+
         private void Start()
         {
             if (!init)
@@ -36,6 +41,9 @@
 
                 init = true;
             }
+
+            mySlot = this.GetComponent<WeaponSlot>();
+            mySlot?.onSlotRemove.AddListener((Action)this.OnSlotRemove);
         }
 
         [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
@@ -136,10 +144,24 @@
                 rb.angularVelocity = Vector3.zero;
             }
 
-            var host = this.GetComponent<StressLevelZero.Interaction.InteractableHost>();
+            var host = this.GetComponent<InteractableHost>();
             host?.EnableInteraction();
             host?.EnableColliders();
             host?.EnableFarHover();
+            RemoveFromSlots();
+        }
+
+        private void RemoveFromSlots()
+        {
+            if (this.CurrentSlot != null && this.CurrentSlot.m_SlottedWeapon == this.mySlot)
+            {
+                this.CurrentSlot.DropWeapon();
+            }
+        }
+
+        void OnSlotRemove()
+        {
+            this.CurrentSlot = null;
         }
     }
 }

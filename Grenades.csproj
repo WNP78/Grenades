@@ -286,6 +286,7 @@
     <Compile Include="Grenade.cs" />
     <Compile Include="HandleScript.cs" />
     <Compile Include="Mod.cs" />
+    <Compile Include="Patches.cs" />
     <Compile Include="PinScript.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
