@@ -265,13 +265,6 @@
                 source.transform.position = grenade.transform.position;
                 source.Play();
             }
-
-            public override void Reset(ExplosionModule module, Grenade grenade)
-            {
-                source.transform.parent = original;
-                source.transform.localPosition = Vector3.zero;
-                source.Stop();
-            }
         }
 
         public class Despawn : ExplosionAction
