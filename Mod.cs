@@ -10,7 +10,9 @@ using StressLevelZero.Data;
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml.Linq;
+using System.Reflection;
 
 namespace WNP78.Grenades
 {
@@ -20,7 +22,7 @@ namespace WNP78.Grenades
 
         public static GrenadesMod Instance { get; set; }
 
-        Dictionary<Guid, XElement> definitions = new Dictionary<Guid, XElement>();
+        internal Dictionary<Guid, XElement> definitions = new Dictionary<Guid, XElement>();
 
         public static Vector3? ParseV3(string s)
         {
@@ -100,6 +102,106 @@ namespace WNP78.Grenades
                     catch (Exception e)
                     {
                         Log.LogError($"Failed when loading grenade bundle: {file.Name}\n{e.Message}\n{e.StackTrace}");
+                    }
+                }
+            }
+
+            CustomMapIntegration.Init();
+            if (Environment.GetCommandLineArgs().Contains("--grenades.debug"))
+            {
+                void ExportXml()
+                {
+                    foreach (var def in Instance.definitions.Values)
+                    {
+                        var file = Path.Combine(folder.FullName, $"exported_{(string)def.Attribute("name") ?? "noname"}.xml");
+                        def.Save(file);
+                    }
+                }
+
+                var i = Interfaces.AddNewInterface("Grenades Debug", Color.green);
+                i.CreateFunctionElement("Output all xml", Color.green, null, null, ExportXml);
+            }
+        }
+
+        internal static class CustomMapIntegration
+        {
+            internal static bool initSuccess = false;
+
+            static Assembly assembly;
+
+            static Type CustomMaps;
+
+            static Type MapLoading;
+            static FieldInfo currentBundle;
+
+            internal static void Init()
+            {
+                assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "CustomMaps");
+
+                if (assembly == null) { return; }
+
+                CustomMaps = assembly.GetType("CustomMaps.CustomMaps");
+                MapLoading = assembly.GetType("CustomMaps.MapLoading");
+                if (CustomMaps == null || MapLoading == null) { return; }
+
+                currentBundle = MapLoading.GetField("CurrentLoadedBundleCMP", BindingFlags.NonPublic | BindingFlags.Static);
+                if (currentBundle == null) { return; }
+
+                var onLoad = CustomMaps.GetEvent("OnCustomMapLoad", BindingFlags.Public | BindingFlags.Static);
+                if (onLoad == null) { return; }
+
+                onLoad.AddEventHandler(null, (Action<string>)OnMapLoad);
+
+                initSuccess = true;
+            }
+
+            internal static void OnMapLoad(string name)
+            {
+                var grenadesRoot = GameObject.Find("GrenadesRoot");
+                if (grenadesRoot != null)
+                {
+                    Dictionary<string, XElement> definitions = new Dictionary<string, XElement>();
+
+                    AssetBundle bundle = (AssetBundle)currentBundle.GetValue(null);
+                    if (bundle != null)
+                    {
+                        TextAsset text = bundle.LoadAsset<TextAsset>("Grenades.xml");
+                        if (text != null)
+                        {
+                            var xml = XDocument.Parse(text.text);
+                            foreach (var grenadeXml in xml.Root.Elements("Grenade"))
+                            {
+                                var grenadeName = (string)grenadeXml.Attribute("name");
+                                if (grenadeName == null)
+                                {
+                                    Debug.LogWarning("Grenade has no name:\n" + grenadeXml);
+                                    continue;
+                                }
+
+                                definitions.Add(grenadeName, grenadeXml);
+                            }
+                        }
+                    }
+
+                    foreach (var grenadeXml in Instance.definitions.Values)
+                    {
+                        var grenadeName = (string)grenadeXml.Attribute("name");
+                        if (grenadeName == null)
+                        {
+                            Debug.LogWarning("Grenade has no name:\n" + grenadeXml);
+                            continue;
+                        }
+
+                        definitions.Add(grenadeName, grenadeXml);
+                    }
+
+                    foreach (Transform child in grenadesRoot.transform)
+                    {
+                        var grenadeName = child.gameObject.name;
+                        if (definitions.TryGetValue(grenadeName, out var grenadeXml))
+                        {
+                            child.gameObject.AddComponent<Grenade>().Init(grenadeXml);
+                        }
                     }
                 }
             }
