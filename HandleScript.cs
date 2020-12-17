@@ -16,7 +16,6 @@
         public static Dictionary<string, Func<IHandleElement>> Elements = new Dictionary<string, Func<IHandleElement>>
         {
             { "Rotate", () => new RotateHandle() },
-            { "Animator", () => new AnimateHandle() },
         };
 
         public Grenade grenade;
@@ -32,7 +31,7 @@
         public float threshold;
         public float rotateSpeed;
 
-        List<IHandleElement> elements;
+        List<IHandleElement> elements = new List<IHandleElement>();
 
         public bool Locked { [UnhollowerBaseLib.Attributes.HideFromIl2Cpp] get; [UnhollowerBaseLib.Attributes.HideFromIl2Cpp] set; } = true;
 
@@ -176,24 +175,6 @@
             public void Update(float angle)
             {
                 transform.localRotation = originalRotation * Quaternion.AngleAxis(angle * factor, axis);
-            }
-        }
-
-        class AnimateHandle : IHandleElement
-        {
-            HandleScript handle;
-            Animator animator;
-
-            public void Init(XElement xml, HandleScript handle)
-            {
-                this.handle = handle;
-                animator = handle.grenade.transform.Find((string)xml.Attribute("path") ?? "HandleAnimation")?.GetComponent<Animator>();
-                animator.StopPlayback();
-            }
-
-            public void Update(float angle)
-            {
-                animator.playbackTime = angle / handle.released;
             }
         }
     }
