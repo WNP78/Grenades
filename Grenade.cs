@@ -29,6 +29,39 @@
 
         public HandWeaponSlotReciever CurrentSlot { get; set; }
 
+        private Action onPinPulled;
+
+        public event Action OnPinPulledEvent
+        {
+            [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
+            add
+            {
+                onPinPulled += value;
+            }
+            [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
+            remove
+            {
+                onPinPulled -= value;
+            }
+        }
+
+
+        private Action onHandleReleased;
+
+        public event Action OnHandleReleasedEvent
+        {
+            [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
+            add
+            {
+                onHandleReleased += value;
+            }
+            [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
+            remove
+            {
+                onHandleReleased -= value;
+            }
+        }
+
         private void Start()
         {
             if (!init)
@@ -38,8 +71,6 @@
                 {
                     this.Init(xml);
                 }
-
-                init = true;
             }
 
             mySlot = this.GetComponent<WeaponSlot>();
@@ -47,7 +78,7 @@
         }
 
         [UnhollowerBaseLib.Attributes.HideFromIl2Cpp]
-        void Init(XElement xml)
+        internal void Init(XElement xml)
         {
             fuseTime = (float?)xml.Attribute("fuse") ?? 5f;
 
@@ -79,6 +110,8 @@
                     this.pin.Init(el, this);
                 }
             }
+
+            init = true;
         }
 
         public void OnPinPulled()
@@ -92,12 +125,15 @@
                 this.timer = this.fuseTime;
                 this.ticking = true;
             }
+
+            this.onPinPulled?.Invoke();
         }
 
         public void OnHandleReleased()
         {
             this.timer = this.fuseTime;
             this.ticking = true;
+            this.onHandleReleased?.Invoke();
         }
 
         void Update()
