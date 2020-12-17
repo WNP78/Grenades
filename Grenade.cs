@@ -92,12 +92,8 @@
             el = xml.Element("Handle");
             if (el != null)
             {
-                var obj = this.transform.Find((string)el.Attribute("path") ?? "HandleTransform");
-                if (obj != null)
-                {
-                    this.handle = obj.gameObject.AddComponent<HandleScript>();
-                    this.handle.Init(el, this);
-                }
+                this.handle = gameObject.AddComponent<HandleScript>();
+                this.handle.Init(el, this);
             }
 
             el = xml.Element("Pin");
