@@ -13,14 +13,18 @@
     {
         public HandleScript(IntPtr ptr) : base(ptr) { }
 
+        public static Dictionary<string, Func<IHandleElement>> Elements = new Dictionary<string, Func<IHandleElement>>
+        {
+            { "Rotate", () => new RotateHandle() },
+            { "Animator", () => new AnimateHandle() },
+        };
+
         public Grenade grenade;
 
         public Grip grip;
 
         public AudioSource audio;
 
-        public Quaternion closed;
-        public Vector3 axis;
         public float open;
         public float released;
 
@@ -28,7 +32,7 @@
         public float threshold;
         public float rotateSpeed;
 
-        Animator animationClip;
+        List<IHandleElement> elements;
 
         public bool Locked { [UnhollowerBaseLib.Attributes.HideFromIl2Cpp] get; [UnhollowerBaseLib.Attributes.HideFromIl2Cpp] set; } = true;
 
@@ -40,10 +44,7 @@
         public void Init(XElement xml, Grenade grenade)
         {
             this.grenade = grenade;
-            this.closed = this.transform.localRotation;
 
-            this.animationClip = grenade.transform.Find((string)xml.Attribute("animationClip") ?? "HandleAnimation")?.GetComponent<Animator>();
-            this.axis = GrenadesMod.ParseV3((string)xml.Attribute("axis") ?? "1,0,0") ?? Vector3.right;
             this.open = (float?)xml.Attribute("open") ?? 30f;
             this.released = (float?)xml.Attribute("released") ?? 150f;
             this.threshold = (float?)xml.Attribute("threshold") ?? 27f;
@@ -63,6 +64,23 @@
                     }
                 }
             }
+
+            if (xml.Attribute("axis") != null) // legacy handling
+            {
+                var legacy = new RotateHandle();
+                legacy.Init(xml, this);
+                elements.Add(legacy);
+            }
+
+            foreach (var el in xml.Elements())
+            {
+                if (Elements.TryGetValue(el.Name.LocalName, out var factory))
+                {
+                    var x = factory();
+                    x.Init(el, this);
+                    this.elements.Add(x);
+                }
+            }
         }
 
         public void Reset()
@@ -70,8 +88,12 @@
             this.Locked = true;
             this.angle = 0f;
             this.hasReleased = false;
-            this.transform.localRotation = this.closed;
             this.audio?.Stop();
+
+            foreach (var e in elements)
+            {
+                e.Update(0f);
+            }
         }
 
         void Update()
@@ -90,7 +112,7 @@
                     if (this.angle < this.released)
                     {
                         this.angle = Mathf.MoveTowards(this.angle, this.released, this.rotateSpeed * Time.deltaTime);
-                        this.transform.localRotation = this.closed * Quaternion.AngleAxis(this.angle, this.axis);
+                        this.Update(this.angle);
                     }
                 }
                 else
@@ -119,12 +141,59 @@
                         this.angle = Mathf.MoveTowards(this.angle, heldAngle, this.rotateSpeed * Time.deltaTime);
                     }
 
-                    this.transform.localRotation = this.closed * Quaternion.AngleAxis(this.angle, this.axis);
-                    if (this.animationClip != null)
-                    {
-                        this.animationClip.playbackTime = this.angle / this.released;
-                    }
+                    this.Update(this.angle);
                 }
+            }
+        }
+
+        void Update(float angle)
+        {
+            this.elements.ForEach(x => x.Update(angle));
+        }
+
+        public interface IHandleElement
+        {
+            void Init(XElement xml, HandleScript script);
+
+            void Update(float angle);
+        }
+
+        class RotateHandle : IHandleElement
+        {
+            float factor;
+            Vector3 axis;
+            Transform transform;
+            Quaternion originalRotation;
+
+            public void Init(XElement xml, HandleScript handle)
+            {
+                transform = handle.grenade.transform.Find((string)xml.Attribute("path") ?? "HandleTransform");
+                originalRotation = transform.localRotation;
+                axis = GrenadesMod.ParseV3((string)xml.Attribute("axis") ?? "1,0,0") ?? Vector3.right;
+                factor = (float?)xml.Attribute("factor") ?? 1f;
+            }
+
+            public void Update(float angle)
+            {
+                transform.localRotation = originalRotation * Quaternion.AngleAxis(angle * factor, axis);
+            }
+        }
+
+        class AnimateHandle : IHandleElement
+        {
+            HandleScript handle;
+            Animator animator;
+
+            public void Init(XElement xml, HandleScript handle)
+            {
+                this.handle = handle;
+                animator = handle.grenade.transform.Find((string)xml.Attribute("path") ?? "HandleAnimation")?.GetComponent<Animator>();
+                animator.StopPlayback();
+            }
+
+            public void Update(float angle)
+            {
+                animator.playbackTime = angle / handle.released;
             }
         }
     }
