@@ -17,6 +17,8 @@
 
         public Grip grip;
 
+        public AudioSource audio;
+
         public Quaternion closed;
         public Vector3 axis;
         public float open;
@@ -25,6 +27,8 @@
         public float[] fingers;
         public float threshold;
         public float rotateSpeed;
+
+        Animator animationClip;
 
         public bool Locked { [UnhollowerBaseLib.Attributes.HideFromIl2Cpp] get; [UnhollowerBaseLib.Attributes.HideFromIl2Cpp] set; } = true;
 
@@ -38,6 +42,7 @@
             this.grenade = grenade;
             this.closed = this.transform.localRotation;
 
+            this.animationClip = grenade.transform.Find((string)xml.Attribute("animationClip") ?? "HandleAnimation")?.GetComponent<Animator>();
             this.axis = GrenadesMod.ParseV3((string)xml.Attribute("axis") ?? "1,0,0") ?? Vector3.right;
             this.open = (float?)xml.Attribute("open") ?? 30f;
             this.released = (float?)xml.Attribute("released") ?? 150f;
@@ -45,6 +50,7 @@
             this.rotateSpeed = (float?)xml.Attribute("degreesPerSecond") ?? 100f;
             this.grip = grenade.transform.Find((string)xml.Attribute("grip") ?? "HandleGrip")?.GetComponent<Grip>();
             var fingers = (string)xml.Attribute("fingers");
+            this.audio = grenade.transform.Find((string)xml.Attribute("audio") ?? "HandleSound")?.GetComponent<AudioSource>();
             if (fingers != null)
             {
                 var strings = fingers.Split(',');
@@ -65,6 +71,7 @@
             this.angle = 0f;
             this.hasReleased = false;
             this.transform.localRotation = this.closed;
+            this.audio?.Stop();
         }
 
         void Update()
@@ -75,6 +82,7 @@
                 {
                     this.hasReleased = true;
                     grenade.OnHandleReleased();
+                    this.audio?.Play();
                 }
                 
                 if (this.hasReleased)
@@ -112,6 +120,10 @@
                     }
 
                     this.transform.localRotation = this.closed * Quaternion.AngleAxis(this.angle, this.axis);
+                    if (this.animationClip != null)
+                    {
+                        this.animationClip.playbackTime = this.angle / this.released;
+                    }
                 }
             }
         }

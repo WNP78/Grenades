@@ -16,6 +16,7 @@
         public Grenade grenade;
         public float pullForceSqr;
         public PinInteractionMode mode;
+        public AudioSource audio;
 
         public List<(Transform t, Quaternion normal, Quaternion held)> transforms = new List<(Transform, Quaternion, Quaternion)>();
 
@@ -26,6 +27,7 @@
         {
             this.grip = this.GetComponent<Grip>();
             this.grenade = grenade;
+            this.audio = grenade.transform.Find((string)xml.Attribute("audio") ?? "HandleSound")?.GetComponent<AudioSource>();
 
             if (!Enum.TryParse((string)xml.Attribute("mode") ?? "ForceThreshold", out this.mode))
             {
@@ -68,6 +70,7 @@
             }
 
             this.gameObject.SetActive(true);
+            this.audio?.Stop();
         }
 
         private void OnPulled()
@@ -79,6 +82,7 @@
 
             this.grenade.OnPinPulled();
             this.gameObject.SetActive(false);
+            this.audio?.Play();
         }
 
         private void OnGrabbed()
