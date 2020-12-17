@@ -176,7 +176,7 @@
                 {
                     foreach (var body in bodies)
                     {
-                        body.AddExplosionForce(this.force, grenade.transform.position, this.radius, 1f, ForceMode.Impulse);
+                        body?.AddExplosionForce(this.force, grenade.transform.position, this.radius, 1f, ForceMode.Impulse);
                     }
                 }
             }
