@@ -110,6 +110,12 @@
             init = true;
         }
 
+        /// <summary>
+        /// Called when the pin is pulled.
+        /// If there is a handle, the handle will be unlocked.
+        /// Otherwise, the timer starts ticking.
+        /// The pin pulled custom event is also fired.
+        /// </summary>
         public void OnPinPulled()
         {
             if (this.handle != null)
@@ -125,6 +131,10 @@
             this.onPinPulled?.Invoke();
         }
 
+        /// <summary>
+        /// Called when the handle is released.
+        /// This starts the timer ticking and fires a custom event.
+        /// </summary>
         public void OnHandleReleased()
         {
             this.timer = this.fuseTime;
@@ -132,6 +142,9 @@
             this.onHandleReleased?.Invoke();
         }
 
+        /// <summary>
+        /// Manages the timer, and explodes when it runs out.
+        /// </summary>
         void Update()
         {
             if (this.ticking)
@@ -156,6 +169,9 @@
             this.explosion.Explode();
         }
 
+        /// <summary>
+        /// Resets the grenade, so it can be respawned and thrown again.
+        /// </summary>
         void Reset()
         {
             this.timer = 0f;
@@ -183,6 +199,9 @@
             RemoveFromSlots();
         }
 
+        /// <summary>
+        /// Removes the grenade from all body slots. This is to fix a bug where it respawns but thinks it's still in the body slot.
+        /// </summary>
         private void RemoveFromSlots()
         {
             if (this.CurrentSlot != null && this.CurrentSlot.m_SlottedWeapon == this.mySlot)

@@ -24,6 +24,11 @@ namespace WNP78.Grenades
 
         internal Dictionary<Guid, XElement> definitions = new Dictionary<Guid, XElement>();
 
+        /// <summary>
+        /// Parses a <see cref="Vector3"/> from a string.
+        /// </summary>
+        /// <param name="s">The s.</param>
+        /// <returns>Thje vector, or null if the input was null.</returns>
         public static Vector3? ParseV3(string s)
         {
             if (s == null) { return null; }
@@ -35,6 +40,11 @@ namespace WNP78.Grenades
                 p.Length > 2 ? float.Parse(p[2]) : 0f);
         }
 
+        /// <summary>
+        /// Gets the XML element for grenade.
+        /// </summary>
+        /// <param name="g">The grenade.</param>
+        /// <returns>The grenade definition xml.</returns>
         public XElement GetXMLForGrenade(Grenade g)
         {
             var nm = g.gameObject.name;
@@ -123,6 +133,9 @@ namespace WNP78.Grenades
             }
         }
 
+        /// <summary>
+        /// Class for custom map integration.
+        /// </summary>
         internal static class CustomMapIntegration
         {
             internal static bool initSuccess = false;
@@ -134,6 +147,11 @@ namespace WNP78.Grenades
             static Type MapLoading;
             static FieldInfo currentBundle;
 
+            /// <summary>
+            /// Initializes this instance.
+            /// Uses reflection so there is no reference to the custom map library (so the mod can load without error if custom maps is not installed)
+            /// This mainly caches reflection things and subscribes to on map load.
+            /// </summary>
             internal static void Init()
             {
                 assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "CustomMaps");
@@ -155,6 +173,13 @@ namespace WNP78.Grenades
                 initSuccess = true;
             }
 
+            /// <summary>
+            /// Called when a map loads.
+            /// Searches for an object named "GrenadesRoot", which activates this.
+            /// If this exists, then any custom grenades inside the map bundle (if it has a Grenades.xml) is loaded for this map only.
+            /// Then any child member of the GrenadesRoot will be initialised as a grenade with settings corresponding to it's object name.
+            /// </summary>
+            /// <param name="name">The name.</param>
             internal static void OnMapLoad(string name)
             {
                 var grenadesRoot = GameObject.Find("GrenadesRoot");
