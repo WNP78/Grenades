@@ -263,6 +263,7 @@
             {
                 source.transform.parent = null;
                 source.transform.position = grenade.transform.position;
+                source.outputAudioMixerGroup = BoneworksModdingToolkit.Audio.sfxMixer;
                 source.Play();
             }
         }
