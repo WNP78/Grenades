@@ -82,7 +82,11 @@
 
             this.grenade.OnPinPulled();
             this.gameObject.SetActive(false);
-            this.audio?.Play();
+            if (this.audio != null)
+            {
+                this.audio.outputAudioMixerGroup = BoneworksModdingToolkit.Audio.sfxMixer;
+                this.audio.Play();
+            }
         }
 
         private void OnGrabbed()

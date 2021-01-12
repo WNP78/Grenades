@@ -103,7 +103,11 @@
                 {
                     this.hasReleased = true;
                     grenade.OnHandleReleased();
-                    this.audio?.Play();
+                    if (this.audio != null)
+                    {
+                        this.audio.outputAudioMixerGroup = BoneworksModdingToolkit.Audio.sfxMixer;
+                        this.audio.Play();
+                    }
                 }
                 
                 if (this.hasReleased)
