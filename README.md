@@ -2,7 +2,7 @@
 This is a mod for Boneworks that adds a framework for grenades, as well as some default grenades. This repository is specifically the framework. The default grenades can be found in the bonetome download [here](https://bonetome.com/boneworks/code/661/).
 
 # Making Custom Grenades
-I reccomend using the same workflow/project as you would use to make items with the [Custom Items SDK](https://bonetome.com/boneworks/code/211/), as it has a lot of useful resources like shaders etc. However there is a custom build script for grenades.
+I reccomend using the same workflow/project as you would use to make items with the [Custom Items SDK](https://bonetome.com/boneworks/code/211/), as it has a lot of useful resources like shaders etc. However there is a custom build script for grenades (you could use the normal asset bundle exporting workflow from custom items, but I find this easier because it can build a single bundle instead of all at once).
 First, import the unity package that is in the mod downloads in UserData/Grenades/ and load the default grenades scene. Here, you can see the stock grenade prefabs, as well as a GameObject called "Exporter". This is for exporting assets into an AssetBundle.
 
 There are 2 parts to making a custom grenade: the prefab, and the XML data. The prefab is the actual grenade object and is made in the normal way you would make a custom item for boneworks - with a rigidbody, an InteractableHost, colliders, grips, and meshes. The XML data is what makes it a grenade, and defines it's behaviour as a grenade. If you're only making a simple grenade, you could keep most of the XML the same from the default Grenades.xml
