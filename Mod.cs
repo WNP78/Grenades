@@ -13,12 +13,13 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace WNP78.Grenades
 {
     public class GrenadesMod : MelonMod
     {
-        const string guidPrefix = "GrenadeGuid_";
+        private const string guidPrefix = "GrenadeGuid_";
 
         public static GrenadesMod Instance { get; set; }
 
@@ -71,6 +72,10 @@ namespace WNP78.Grenades
 
         public override void OnApplicationStart()
         {
+#if STICKY
+            Stickies.OnApplicationStart();
+#endif
+
             Instance = this;
             base.OnApplicationStart();
             ClassInjector.RegisterTypeInIl2Cpp<Grenade>();
@@ -123,15 +128,57 @@ namespace WNP78.Grenades
                 {
                     foreach (var def in Instance.definitions.Values)
                     {
-                        var file = Path.Combine(folder.FullName, $"exported_{(string)def.Attribute("name") ?? "noname"}.xml");
-                        def.Save(file);
+                        var file = Path.Combine(folder.FullName, "Xml", $"{(string)def.Attribute("name") ?? "noname"}.xml");
+                        XDocument doc = new XDocument(new XElement("Grenades", def));
+                        doc.Save(file);
+                    }
+                }
+
+                void LoadDebugXml()
+                {
+                    foreach (var file in folder.GetDirectories("Xml").SelectMany(x => x.GetFiles("*.xml")))
+                    {
+                        var doc = XDocument.Load(file.FullName);
+                        if (doc.Root.Name == "Grenades")
+                        {
+                            foreach (var def in doc.Root.Elements("Grenade"))
+                            {
+                                Guid? guid = null;
+                                foreach (var kvp in definitions)
+                                {
+                                    if ((string)kvp.Value.Attribute("name") == (string)def.Attribute("name"))
+                                    {
+                                        guid = kvp.Key;
+                                    }
+                                }
+
+                                if (guid.HasValue)
+                                {
+                                    definitions[guid.Value] = def;
+                                }
+                            }
+                        }
                     }
                 }
 
                 var i = Interfaces.AddNewInterface("Grenades Debug", Color.green);
-                i.CreateFunctionElement("Output all xml", Color.green, null, null, ExportXml);
+                i.CreateFunctionElement("Export all xml", Color.green, null, null, ExportXml);
+                i.CreateFunctionElement("Import all xml", Color.green, null, null, LoadDebugXml);
             }
+
+            var m = Interfaces.AddNewInterface("Death", Color.green);
+            m.CreateFunctionElement("Die", Color.red, null, null, () =>
+            {
+                var f = UnityEngine.Object.FindObjectOfType<MeshFilter>().mesh;
+                var addr = f.Pointer;
+                var p1 = (addr + UnityEngine.Random.RandomRangeInt(0x50, 0x500));
+                var p2 = (addr + UnityEngine.Random.RandomRangeInt(0x50, 0x500));
+                memcpy(p1, p2, 0x3);
+            });
         }
+
+        [DllImport("msvcrt.dll", SetLastError = false)]
+        static extern IntPtr memcpy(IntPtr dest, IntPtr src, int count);
 
         /// <summary>
         /// Class for custom map integration.
@@ -140,12 +187,12 @@ namespace WNP78.Grenades
         {
             internal static bool initSuccess = false;
 
-            static Assembly assembly;
+            private static Assembly assembly;
 
-            static Type CustomMaps;
+            private static Type CustomMaps;
 
-            static Type MapLoading;
-            static FieldInfo currentBundle;
+            private static Type MapLoading;
+            private static FieldInfo currentBundle;
 
             /// <summary>
             /// Initializes this instance.
