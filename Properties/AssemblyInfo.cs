@@ -36,5 +36,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
 // Melon stuff
-[assembly: MelonLoader.MelonInfo(typeof(WNP78.Grenades.GrenadesMod), "Grenades", "0.1.5", "WNP78")]
+[assembly: MelonLoader.MelonInfo(typeof(WNP78.Grenades.GrenadesMod), "Grenades", "0.1.004", "WNP78")]
 [assembly: MelonLoader.MelonGame("Stress Level Zero", "BONEWORKS")]
